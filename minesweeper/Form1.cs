@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;   // This top section is always in code
-using System.Data;
 using System.Drawing;
-using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+
 namespace minesweeper
 {
     public partial class Form1 : Form
@@ -14,223 +11,383 @@ namespace minesweeper
         {
             InitializeComponent();
         }
-        private Label[] lboard = new Label[0];
+        private Label[] _lboard = new Label[0];
         private int _width = 10;
         private int _height = 10;
         private int _mines = 10;// This is where I state what variables equal - Example. x = 2;
-        private Random myHat = new Random();
-        private bool gameFinished = false;
-        public const string emptyTileText = "  ";
+        private Random _myHat = new Random();
+        private bool _gameFinished = false;
+        private enum TileValue
+        {
+            Empty,
+            Bomb,
+            One,
+            Two,
+            Three,
+            Four,
+            Five,
+            Six,
+            Seven,
+            Eight,
+            Win
+        }
+
+        /// <summary>
+        /// This is used only in the GettileValue method to assist in abstracting specifics of how values are stored / displayed to users.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        private TileValue ConvertToEnum(in string s)
+        {
+            TileValue t = TileValue.Empty;
+            switch (s)
+            {
+                case ("  "):
+                    {
+                        t = TileValue.Empty;
+                        break;
+                    }
+                case ("B"):
+                    {
+                        t = TileValue.Bomb;
+                        break;
+                    }
+                case ("1"):
+                    {
+                        t = TileValue.One;
+                        break;
+                    }
+                case ("2"):
+                    {
+                        t = TileValue.Two;
+                        break;
+                    }
+                case ("3"):
+                    {
+                        t = TileValue.Three;
+                        break;
+                    }
+                case ("4"):
+                    {
+                        t = TileValue.Four;
+                        break;
+                    }
+                case ("5"):
+                    {
+                        t = TileValue.Five;
+                        break;
+                    }
+                case ("6"):
+                    {
+                        t = TileValue.Six;
+                        break;
+                    }
+                case ("7"):
+                    {
+                        t = TileValue.Seven;
+                        break;
+                    }
+                case ("8"):
+                    {
+                        t = TileValue.Eight;
+                        break;
+                    }
+                case ("W"):
+                    {
+                        t = TileValue.Win;
+                        break;
+                    }
+                default:
+                    break;
+            }
+            return t;
+        }
+        /// <summary>
+        /// This is used only in the SettileValue method to assist in abstracting specifics of how values are stored / displayed to users.
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        private string ConvertFromEnum(in TileValue t)
+        {
+            string s = "  ";
+            switch (t)
+            {
+                case (TileValue.Empty):
+                    {
+                        s = "  ";
+                        break;
+                    }
+                case (TileValue.Bomb):
+                    {
+                        s = "B";
+                        break;
+                    }
+                case (TileValue.One):
+                    {
+                        s = "1";
+                        break;
+                    }
+                case (TileValue.Two):
+                    {
+                        s = "2";
+                        break;
+                    }
+                case (TileValue.Three):
+                    {
+                        s = "3";
+                        break;
+                    }
+                case (TileValue.Four):
+                    {
+                        s = "4";
+                        break;
+                    }
+                case (TileValue.Five):
+                    {
+                        s = "5";
+                        break;
+                    }
+                case (TileValue.Six):
+                    {
+                        s = "6";
+                        break;
+                    }
+                case (TileValue.Seven):
+                    {
+                        s = "7";
+                        break;
+                    }
+                case (TileValue.Eight):
+                    {
+                        s = "8";
+                        break;
+                    }
+                case (TileValue.Win):
+                    {
+                        s = "W";
+                        break;
+                    }
+                default:
+                    break;
+            }
+            return s;
+        }
+
+        /// <summary>
+        /// Help abstract UI.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        private TileValue GetTileValue(in int index)
+        {
+            return ConvertToEnum(_lboard[index].Text);
+        }
+        /// <summary>
+        /// help abstract ui.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
+        private void SetTileValue(in int index, in TileValue value)
+        {
+            _lboard[index].Text = ConvertFromEnum(value);
+        }
+        private void SetTileBackcolor(in int index, in Color c)
+        {
+            _lboard[index].BackColor = c;
+        }
+        private void SetTileForecolor(in int index, in Color c)
+        {
+            _lboard[index].ForeColor = c;
+        }
+        private bool IsTileRevealed(in int index)
+        {
+            return (_lboard[index].BackColor != Color.Gray && !IsTileHighLighted(index));
+        }
+        private bool IsTileHighLighted(in int index)
+        {
+            return (_lboard[index].BackColor == Color.Yellow);
+        }
+        private void ResizeWindow()
+        {
+            this.MaximumSize = new Size(_width * 16 + 40, _height * 16 + 100);
+            this.MinimumSize = new Size(_width * 16 + 40, _height * 16 + 100);
+        }
         private void Form1_Load(object sender, EventArgs e)
         {
-            this.MaximumSize = new Size(700, 800); //100 * width;
-            this.MinimumSize = new Size(700, 800);
-            build();
-            assign();
+            ResizeWindow();
+            Build();
+            Assign();
         }
         private void UpdateTileColors(int index)
         {
-            lboard[index].BackColor = Color.LightGray;
-            if (lboard[index].Text == "1")
+            if (GetTileValue(index) == TileValue.Bomb)
             {
-                lboard[index].ForeColor = Color.Blue;
+                SetTileForecolor(index, Color.Black);
+                SetTileBackcolor(index, Color.Red);
             }
-            if (lboard[index].Text == "2")
+            else
             {
-                lboard[index].ForeColor = Color.Green;
-            }
-            if (lboard[index].Text == "3")
-            {
-                lboard[index].ForeColor = Color.Red;
-            }
-            if (lboard[index].Text == "4")
-            {
-                lboard[index].ForeColor = Color.Purple;
-            }
-            if (lboard[index].Text == "5")
-            {
-                lboard[index].ForeColor = Color.Yellow;
-            }
-            if (lboard[index].Text == "6")
-            {
-                lboard[index].ForeColor = Color.Orange;
-            }
-            if (lboard[index].Text == "7")
-            {
-                lboard[index].ForeColor = Color.Black;
-            }
-            if (lboard[index].Text == "8")
-            {
-                lboard[index].ForeColor = Color.White;
-            }
-            if (lboard[index].Text == "B")
-            {
-                lboard[index].ForeColor = Color.Black;
-                lboard[index].BackColor = Color.Red;
+                SetTileBackcolor(index, Color.LightGray);
+
+                if (GetTileValue(index) == TileValue.One)
+                {
+                    SetTileForecolor(index, Color.Blue);
+                }
+                else if (GetTileValue(index) == TileValue.Two)
+                {
+                    SetTileForecolor(index, Color.Green);
+                }
+                else if (GetTileValue(index) == TileValue.Three)
+                {
+                    SetTileForecolor(index, Color.Red);
+                }
+                else if (GetTileValue(index) == TileValue.Four)
+                {
+                    SetTileForecolor(index, Color.Purple);
+                }
+                else if (GetTileValue(index) == TileValue.Five)
+                {
+                    SetTileForecolor(index, Color.Yellow);
+                }
+                else if (GetTileValue(index) == TileValue.Six)
+                {
+                    SetTileForecolor(index, Color.Orange);
+                }
+                else if (GetTileValue(index) == TileValue.Seven)
+                {
+                    SetTileForecolor(index, Color.Black);
+                }
+                else if (GetTileValue(index) == TileValue.Eight)
+                {
+                    SetTileForecolor(index, Color.White);
+                }
             }
         }
-        private void bombcheck(int index)
+        private void BombCheck(in int index)
         {
-            if (!gameFinished)
+            if (!_gameFinished)
             {
                 UpdateTileColors(index);
-                if (lboard[index].Text == "B")
+                if (GetTileValue(index) == TileValue.Bomb)
                 {
-                    gameFinished = true;
+                    _gameFinished = true;
                 }
             }
         }
-        public void assign()// This section randomly sets up the game. Puts bombs in appropriate locations
+        /// <summary>
+        /// This section randomly sets up the game. Puts bombs in appropriate locations
+        /// </summary>
+        public void Assign()
         {
             int rand = 0;
-            int temp = 0;
-            try
+            int bombsPlaced = 0;
+            for (int i = 0; i < _height * _width; i++)//set all values to empty
             {
-                temp = 0;
-                for (int i = 0; i < _height * _width; i++)
-                {
-                    lboard[i].Text = emptyTileText;
-                }
-                while (true)
-                {
-                    rand = myHat.Next(0, _width * _height);
-                    if (lboard[rand].Text == emptyTileText)
-                    {
-                        lboard[rand].Text = "B";
-                        temp++;
-                    }
-                    if (temp >= _mines)
-                    {
-                        break;
-                    }
-                }
-                for (int i = 0; i < _height * _width; i++)
-                {
-                    temp = 0;
-                    if (lboard[i].Text != "B")
-                    {
-                        if (i >= _width)//up 3
-                        {
-                            if (i % _width != 0)
-                            {
-                                if (lboard[i - 1 - _width].Text == "B")
-                                {
-                                    temp++;
-                                }
-                            }
-                            if (lboard[i - _width].Text == "B")
-                            {
-                                temp++;
-                            }
-                            if ((i + 1) % _width != 0 && i != _width * _height - 1)
-                            {
-                                if (lboard[i + 1 - _width].Text == "B")
-                                {
-                                    temp++;
-                                }
-                            }
-                        }
-                        if (i != _height * _width - 1)
-                        {
-                            if ((i + 1) % _width != 0)//right
-                            {
-                                if (lboard[i + 1].Text == "B")
-                                {
-                                    temp++;
-                                }
-                            }
-                        }
-                        if (i < _height * _width - _width)//added -1//<=?//down 3
-                        {
-                            if (i % _width != 0)//i != 0 safety
-                            {
-                                if (lboard[i - 1 + _width].Text == "B")
-                                {
-                                    temp++;
-                                }
-                            }
-                            if (lboard[i + _width].Text == "B")
-                            {
-                                temp++;
-                            }
-                            if ((i + 1) % _width != 0)//fix
-                            {
-                                if (lboard[i + 1 + _width].Text == "B")
-                                {
-                                    temp++;
-                                }
-                            }
-                        }
-                        if (i % _width != 0 && i - 1 >= 0)//left
-                        {
-                            if (lboard[i - 1].Text == "B")
-                            {
-                                temp++;
-                            }
-                        }
-                        if (temp != 0)
-                        {
-                            lboard[i].Text = Convert.ToString(temp);
-                        }
-                    }
-                }
-                temp = 0;
+                SetTileValue(i, TileValue.Empty);
             }
-            catch
+            do//set random tiles to be bombs
             {
-                MessageBox.Show("!An error has occured!");
+                rand = _myHat.Next(0, _width * _height);
+                if (GetTileValue(rand) == TileValue.Empty)
+                {
+                    SetTileValue(rand, TileValue.Bomb);
+                    bombsPlaced++;
+                }
+            }
+            while (bombsPlaced < _mines);
+            for (int i = 0, adjacentBombs = 0; i < _height * _width; i++, adjacentBombs = 0)
+            {
+                if (GetTileValue(i) != TileValue.Bomb)
+                {
+                    if (i >= _width)//up 3
+                    {
+                        if (i % _width != 0 && GetTileValue(i - 1 - _width) == TileValue.Bomb)
+                        {
+                            adjacentBombs++;
+                        }
+                        if (GetTileValue(i - _width) == TileValue.Bomb)
+                        {
+                            adjacentBombs++;
+                        }
+                        if ((i + 1) % _width != 0 && GetTileValue(i + 1 - _width) == TileValue.Bomb)
+                        {
+                            adjacentBombs++;
+                        }
+                    }
+                    if ((i + 1) % _width == 0 && GetTileValue(i + 1) == TileValue.Bomb)
+                    {
+                        adjacentBombs++;
+                    }
+                    if (i < _height * (_width - 1))//bottom 3
+                    {
+                        if (i % _width != 0 && GetTileValue(i - 1 + _width) == TileValue.Bomb)
+                        {
+                            adjacentBombs++;
+                        }
+                        if (GetTileValue(i + _width) == TileValue.Bomb)
+                        {
+                            adjacentBombs++;
+                        }
+                        if ((i + 1) % _width != 0 && GetTileValue(i + 1 + _width) == TileValue.Bomb)
+                        {
+                            adjacentBombs++;
+                        }
+                    }
+                    if (i % _width != 0 && GetTileValue(i - 1) == TileValue.Bomb)//left
+                    {
+                        adjacentBombs++;
+                    }
+                    if (adjacentBombs != 0)
+                    {
+                        SetTileValue(i, ConvertToEnum(Convert.ToString(adjacentBombs)));
+                    }
+                }
             }
         }
-        public void build()// This section makes the grid for the game
+        /// <summary>
+        /// This section makes the grid for the game
+        /// </summary>
+        public void Build()
         {
             try
             {
-                gameFinished = false;
-                Array.Resize(ref lboard, 0);
-                Array.Resize(ref lboard, _width * _height);
-                //if (lboard.Length > 1)
-                //{
-                //    for (int i = 0; i < lboard.Length && i < ; i++)
-                //    {
-                //        lboard[i].Visible = false;
-                //    }
-                //}
-                this.MaximumSize = new Size(_width * 15 + _width + 40, _height * 15 + 100 + _height);
-                this.MinimumSize = new Size(_width * 15 + _width + 40, _height * 15 + 100 + _height);
-                for (int i = 0; i < lboard.Length; i++)
+                Array.Resize(ref _lboard, 0);
+                Array.Resize(ref _lboard, _width * _height);
+                ResizeWindow();
+                for (int i = 0; i < _lboard.Length; i++)
                 {
                     int index = i;
-                    lboard[i] = new Label();
+                    _lboard[i] = new Label();
                     if (i == 0)
                     {
-                        lboard[i].Height = 15;
-                        lboard[i].Width = 15;
-                        lboard[i].Left = 50 / 5;//width * height/2;//Convert.ToInt16(this.Width - (this.Width / 1.1));
-                        lboard[i].Top = 50;
+                        _lboard[i].Height = 15;
+                        _lboard[i].Width = 15;
+                        _lboard[i].Left = 50 / 5;//width * height/2;//Convert.ToInt16(this.Width - (this.Width / 1.1));
+                        _lboard[i].Top = 50;
                     }
                     if (i != 0)
                     {
-                        lboard[i].Left = lboard[i - 1].Right + 1;
-                        lboard[i].Top = lboard[i - 1].Top;
-                        lboard[i].Width = lboard[i - 1].Width;
-                        lboard[i].Height = lboard[i - 1].Height;
+                        _lboard[i].Left = _lboard[i - 1].Right + 1;
+                        _lboard[i].Top = _lboard[i - 1].Top;
+                        _lboard[i].Width = _lboard[i - 1].Width;
+                        _lboard[i].Height = _lboard[i - 1].Height;
                     }
                     if (i % _width == 0 && i != 0)
                     {
-                        lboard[i].Left = lboard[i - _width].Left;
-                        lboard[i].Top = lboard[i - _width].Bottom + 1;
+                        _lboard[i].Left = _lboard[i - _width].Left;
+                        _lboard[i].Top = _lboard[i - _width].Bottom + 1;
                     }
-                    lboard[i].Font = new Font("Ariel Black", 8, FontStyle.Bold);
-                    lboard[i].BackColor = Color.Gray;
-                    lboard[i].AutoSize = false;
-                    Controls.Add(lboard[i]);
-                    lboard[i].BringToFront();
-                    lboard[i].Tag = i;
-                    lboard[i].Click += new EventHandler(Form1_Click);
-                    lboard[i].Text = "0";
-                    lboard[i].Visible = true;
-                    lboard[i].ForeColor = Color.Gray;//gray
-                    lboard[i].BackColor = Color.Gray;
+                    _lboard[i].Font = new Font("Ariel Black", 8, FontStyle.Bold);
+                    _lboard[i].BackColor = Color.Gray;
+                    _lboard[i].AutoSize = false;
+                    Controls.Add(_lboard[i]);
+                    _lboard[i].BringToFront();
+                    _lboard[i].Tag = i;
+                    _lboard[i].Click += new EventHandler(Form1_Click);
+                    _lboard[i].Text = ConvertFromEnum(TileValue.Win);
+                    _lboard[i].Visible = true;
+                    _lboard[i].ForeColor = Color.Gray;//gray
+                    _lboard[i].BackColor = Color.Gray;
                 }
                 tbnull.Left = -100;
                 tbnull.Top = -100;
@@ -266,58 +423,58 @@ namespace minesweeper
             int index = Convert.ToInt16(p.Tag);
             int temp = 0;
             index++;
-            if (!gameFinished)
+            if (!_gameFinished)
             {
                 MouseEventArgs me = (MouseEventArgs)e;
                 if (me.Button == MouseButtons.Right)
                 {
                     temp = 0;
-                    if (lboard[index - 1].BackColor == Color.Gray)
+                    if (!IsTileRevealed(index - 1))
                     {
-                        lboard[index - 1].BackColor = Color.Yellow;
-                        lboard[index - 1].ForeColor = Color.Yellow;
+                        _lboard[index - 1].BackColor = Color.Yellow;
+                        _lboard[index - 1].ForeColor = Color.Yellow;
                         temp++;
                     }
 
-                    if (temp != 1 && lboard[index - 1].BackColor == Color.Yellow)
+                    if (temp != 1 && IsTileHighLighted(index - 1))
                     {
-                        lboard[index - 1].BackColor = Color.Gray;
-                        lboard[index - 1].ForeColor = Color.Gray;
+                        _lboard[index - 1].BackColor = Color.Gray;
+                        _lboard[index - 1].ForeColor = Color.Gray;
                     }
                 }
                 if (me.Button == MouseButtons.Left)
                 {
-                    if (lboard[index - 1].Text == emptyTileText)
+                    if (GetTileValue(index - 1) == TileValue.Empty)
                     {
                         bool continueRevealing = false;
                         do
                         {
                             continueRevealing = false;
-                            for (int i = 0; i < lboard.Length; i++)
+                            for (int i = 0; i < _lboard.Length; i++)
                             {
-                                if (lboard[i].Text == emptyTileText && (lboard[i].BackColor == Color.LightGray || i == index - 1))
+                                if (GetTileValue(i) == TileValue.Empty && (IsTileRevealed(i) || i == index - 1))
                                 {
                                     if (i >= _width)//up 3
                                     {
                                         if (i % _width != 0)
                                         {
-                                            if (lboard[i - 1 - _width].BackColor != Color.LightGray)
+                                            if (_lboard[i - 1 - _width].BackColor != Color.LightGray)
                                             {
                                                 continueRevealing = true;
-                                                bombcheck(i - _width - 1);
+                                                BombCheck(i - _width - 1);
                                             }
                                         }
-                                        if (lboard[i - _width].BackColor != Color.LightGray)
+                                        if (_lboard[i - _width].BackColor != Color.LightGray)
                                         {
                                             continueRevealing = true;
-                                            bombcheck(i - _width);
+                                            BombCheck(i - _width);
                                         }
                                         if ((i + 1) % _width != 0 && i != _width * _height - 1)
                                         {
-                                            if (lboard[i + 1 - _width].BackColor != Color.LightGray)
+                                            if (_lboard[i + 1 - _width].BackColor != Color.LightGray)
                                             {
                                                 continueRevealing = true;
-                                                bombcheck(i + 1 - _width);
+                                                BombCheck(i + 1 - _width);
                                             }
                                         }
                                     }
@@ -325,10 +482,10 @@ namespace minesweeper
                                     {
                                         if ((i + 1) % _width != 0)//right
                                         {
-                                            if (lboard[i + 1].BackColor != Color.LightGray)
+                                            if (_lboard[i + 1].BackColor != Color.LightGray)
                                             {
                                                 continueRevealing = true;
-                                                bombcheck(i + 1);
+                                                BombCheck(i + 1);
                                             }
                                         }
                                     }
@@ -336,63 +493,63 @@ namespace minesweeper
                                     {
                                         if (i % _width != 0)//i != 0 safety
                                         {
-                                            if (lboard[i - 1 + _width].BackColor != Color.LightGray)
+                                            if (_lboard[i - 1 + _width].BackColor != Color.LightGray)
                                             {
                                                 continueRevealing = true;
-                                                bombcheck(i - 1 + _width);
+                                                BombCheck(i - 1 + _width);
                                             }
                                         }
-                                        if (lboard[i + _width].BackColor != Color.LightGray)
+                                        if (_lboard[i + _width].BackColor != Color.LightGray)
                                         {
                                             continueRevealing = true;
-                                            bombcheck(i + _width);
+                                            BombCheck(i + _width);
                                         }
                                         if ((i + 1) % _width != 0)//fix
                                         {
-                                            if (lboard[i + 1 + _width].BackColor != Color.LightGray)
+                                            if (_lboard[i + 1 + _width].BackColor != Color.LightGray)
                                             {
                                                 continueRevealing = true;
-                                                bombcheck(i + 1 + _width);
+                                                BombCheck(i + 1 + _width);
                                             }
                                         }
                                     }
                                     if (i % _width != 0 && i - 1 >= 0)//left
                                     {
-                                        if (lboard[i - 1].BackColor != Color.LightGray)
+                                        if (_lboard[i - 1].BackColor != Color.LightGray)
                                         {
                                             continueRevealing = true;
-                                            bombcheck(i - 1);
+                                            BombCheck(i - 1);
                                         }
                                     }
                                 }
                             }
                         } while (continueRevealing);
                     }
-                    bombcheck(index - 1);
+                    BombCheck(index - 1);
                     temp = 0;
                     for (int i = 0; i < _width * _height; i++)
                     {
-                        if (lboard[i].BackColor == Color.LightGray)
+                        if (IsTileRevealed(i))
                         {
                             temp++;
                         }
                     }
-                    if (temp == (_height * _width) - _mines)
+                    if (temp == (_height * _width) - _mines && !_gameFinished)
                     {
                         for (int i = 0; i < _width * _height; i++)
                         {
-                            if (lboard[i].BackColor == Color.LightGray)
+                            if (IsTileRevealed(i))
                             {
-                                lboard[i].Text = "W";
-                                lboard[i].ForeColor = Color.Blue;
+                                SetTileValue(i, TileValue.Win);
+                                SetTileForecolor(i, Color.Blue);
                             }
-                            if (lboard[i].BackColor != Color.LightGray)
+                            else
                             {
-                                lboard[i].ForeColor = Color.Black;
-                                lboard[i].BackColor = Color.LightGray;
+                                SetTileForecolor(i, Color.Black);
+                                SetTileBackcolor(i, Color.LightGray);
                             }
                         }
-                        gameFinished = true;
+                        _gameFinished = true;
                     }
                 }
             }
@@ -416,8 +573,9 @@ namespace minesweeper
                 _height = h;
                 _width = w;
                 _mines = m;
-                build();
-                assign();
+                _gameFinished = false;
+                Build();
+                Assign();
             }
             else
             {
@@ -439,9 +597,9 @@ namespace minesweeper
             errorMessage = string.Empty;
             int maxTileCount = 781;
 
-            if (h * w < 2)
+            if (h * w < 100)
             {
-                errorMessage = "There must be at least 2 tiles in the grid.";
+                errorMessage = "There must be at least 100 tiles in the grid.";
             }
             else if ((h * w) - m < 1)
             {
