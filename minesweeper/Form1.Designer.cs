@@ -33,37 +33,39 @@
             this.tbmines = new System.Windows.Forms.TextBox();
             this.linfo = new System.Windows.Forms.Label();
             this.lreset = new System.Windows.Forms.Label();
-            this.tbnull = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // tbheight
             // 
-            this.tbheight.Location = new System.Drawing.Point(99, 106);
+            this.tbheight.Location = new System.Drawing.Point(159, 0);
             this.tbheight.Name = "tbheight";
-            this.tbheight.Size = new System.Drawing.Size(100, 20);
+            this.tbheight.Size = new System.Drawing.Size(30, 20);
             this.tbheight.TabIndex = 1;
             this.tbheight.Text = "10";
             // 
             // tbwidth
             // 
-            this.tbwidth.Location = new System.Drawing.Point(110, 167);
+            this.tbwidth.Location = new System.Drawing.Point(83, 0);
             this.tbwidth.Name = "tbwidth";
-            this.tbwidth.Size = new System.Drawing.Size(100, 20);
+            this.tbwidth.Size = new System.Drawing.Size(30, 20);
             this.tbwidth.TabIndex = 0;
             this.tbwidth.Text = "10";
             // 
             // tbmines
             // 
-            this.tbmines.Location = new System.Drawing.Point(134, 193);
+            this.tbmines.Location = new System.Drawing.Point(227, 0);
             this.tbmines.Name = "tbmines";
-            this.tbmines.Size = new System.Drawing.Size(100, 20);
+            this.tbmines.Size = new System.Drawing.Size(30, 20);
             this.tbmines.TabIndex = 2;
             this.tbmines.Text = "10";
             // 
             // linfo
             // 
             this.linfo.AutoSize = true;
-            this.linfo.Location = new System.Drawing.Point(173, 53);
+            this.linfo.Location = new System.Drawing.Point(0, 13);
             this.linfo.Name = "linfo";
             this.linfo.Size = new System.Drawing.Size(13, 13);
             this.linfo.TabIndex = 3;
@@ -73,32 +75,54 @@
             // lreset
             // 
             this.lreset.AutoSize = true;
-            this.lreset.Location = new System.Drawing.Point(131, 39);
+            this.lreset.Location = new System.Drawing.Point(0, 0);
             this.lreset.Name = "lreset";
             this.lreset.Size = new System.Drawing.Size(35, 13);
             this.lreset.TabIndex = 3;
             this.lreset.Text = "Reset";
             this.lreset.Click += new System.EventHandler(this.lreset_Click);
             // 
-            // tbnull
+            // label1
             // 
-            this.tbnull.Location = new System.Drawing.Point(12, 220);
-            this.tbnull.Name = "tbnull";
-            this.tbnull.Size = new System.Drawing.Size(100, 20);
-            this.tbnull.TabIndex = 5;
-            this.tbnull.TabStop = false;
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(45, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(38, 13);
+            this.label1.TabIndex = 4;
+            this.label1.Text = "Width:";
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(118, 0);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(41, 13);
+            this.label2.TabIndex = 5;
+            this.label2.Text = "Height:";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(189, 0);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(38, 13);
+            this.label3.TabIndex = 6;
+            this.label3.Text = "Mines:";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 261);
-            this.Controls.Add(this.tbnull);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.lreset);
             this.Controls.Add(this.linfo);
             this.Controls.Add(this.tbmines);
             this.Controls.Add(this.tbwidth);
             this.Controls.Add(this.tbheight);
+            this.DoubleBuffered = true;
             this.Name = "Form1";
             this.Text = "Mine Cleaner";
             this.Load += new System.EventHandler(this.Form1_Load);
@@ -114,7 +138,9 @@
         private System.Windows.Forms.TextBox tbmines;
         private System.Windows.Forms.Label linfo;
         private System.Windows.Forms.Label lreset;
-        private System.Windows.Forms.TextBox tbnull;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label3;
     }
 }
 
