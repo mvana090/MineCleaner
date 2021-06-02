@@ -18,6 +18,11 @@ namespace minesweeper
         private Random _myHat = new Random();
         private bool _gameFinished = false;
         private object BoardLock = new object();
+        double timeEllapsed = 0;
+        Color highLightColor = Color.Yellow;
+        Color unrevealedBackColor = Color.Gray;
+        Color revealedBackColor = Color.LightGray;
+        Color questionMarkColor = Color.Purple;
         private enum TileValue
         {
             Empty,
@@ -202,11 +207,15 @@ namespace minesweeper
         }
         private bool IsTileRevealed(in int index)
         {
-            return (_lboard[index].BackColor != Color.Gray && !IsTileHighLighted(index));
+            return (_lboard[index].BackColor != unrevealedBackColor && !IsTileHighLighted(index) && !IsTileQuestioned(index));
         }
         private bool IsTileHighLighted(in int index)
         {
-            return (_lboard[index].BackColor == Color.Yellow);
+            return (_lboard[index].BackColor == highLightColor);
+        }
+        private bool IsTileQuestioned(in int index)
+        {
+            return (_lboard[index].BackColor == questionMarkColor);
         }
         private void ResizeWindow()
         {
@@ -224,6 +233,7 @@ namespace minesweeper
                 ResizeWindow();
                 Build();
                 Assign();
+                timer1.Enabled = true;
             }
         }
         private void UpdateTileColors(int index)
@@ -235,7 +245,7 @@ namespace minesweeper
             }
             else
             {
-                SetTileBackcolor(index, Color.LightGray);
+                SetTileBackcolor(index, revealedBackColor);
 
                 if (GetTileValue(index) == TileValue.One)
                 {
@@ -279,6 +289,7 @@ namespace minesweeper
                 if (GetTileValue(index) == TileValue.Bomb)
                 {
                     _gameFinished = true;
+                    timer1.Enabled = false;
                 }
             }
         }
@@ -384,8 +395,8 @@ namespace minesweeper
                         _lboard[i].Top = _lboard[i - _width].Bottom + 1;
                     }
                 }
-                _lboard[i].ForeColor = Color.Gray;
-                _lboard[i].BackColor = Color.Gray;
+                _lboard[i].ForeColor = unrevealedBackColor;
+                _lboard[i].BackColor = unrevealedBackColor;
             }
             #endregion
             #region Add New Tiles
@@ -421,17 +432,19 @@ namespace minesweeper
                 _lboard[i].Tag = i;
                 _lboard[i].Click += new EventHandler(Form1_Click);
                 _lboard[i].Visible = true;
-                _lboard[i].ForeColor = Color.Gray;
-                _lboard[i].BackColor = Color.Gray;
+                _lboard[i].ForeColor = unrevealedBackColor;
+                _lboard[i].BackColor = unrevealedBackColor;
             }
             #endregion
-            //#region User Control Setup
+            #region User Control Setup
             //lreset.BringToFront();
             //tbwidth.BringToFront();
             //tbheight.BringToFront();
             //tbmines.BringToFront();
             //linfo.BringToFront();
-            //#endregion
+            l_TimeEllapsed.Text = "0";
+            timeEllapsed = 0;
+            #endregion
         }
         void Form1_Click(object sender, EventArgs e)// This section runs when you click a square
         {
@@ -444,8 +457,8 @@ namespace minesweeper
                     MouseEventArgs me = (MouseEventArgs)e;
                     if (me.Button == MouseButtons.Right && !IsTileRevealed(index))
                     {
-                        SetTileForecolor(index, (IsTileHighLighted(index)) ? Color.Gray : Color.Yellow);
-                        SetTileBackcolor(index, (IsTileHighLighted(index)) ? Color.Gray : Color.Yellow);
+                        SetTileForecolor(index, (IsTileHighLighted(index)) ? questionMarkColor : (IsTileQuestioned(index)) ? unrevealedBackColor :  highLightColor);
+                        SetTileBackcolor(index, (IsTileHighLighted(index)) ? questionMarkColor : (IsTileQuestioned(index)) ? unrevealedBackColor : highLightColor);
                     }
                     else if (me.Button == MouseButtons.Left)
                     {
@@ -533,10 +546,11 @@ namespace minesweeper
                                     else
                                     {
                                         SetTileForecolor(i, Color.Black);
-                                        SetTileBackcolor(i, Color.LightGray);
+                                        SetTileBackcolor(i, revealedBackColor);
                                     }
                                 }
                                 _gameFinished = true;
+                                timer1.Enabled = false;
                             }
                         }
                     }
@@ -561,12 +575,14 @@ namespace minesweeper
                 int.TryParse(tbmines.Text, out m);
                 if (ResetIsValid(h, w, m, out string errorMessage))
                 {
+                    timer1.Enabled = false;
                     _height = h;
                     _width = w;
                     _mines = m;
                     _gameFinished = false;
                     Build();
                     Assign();
+                    timer1.Enabled = true;
                 }
                 else
                 {
@@ -575,6 +591,7 @@ namespace minesweeper
             }
         }
 
+        private const int maxTileCount = 2000;
         /// <summary>
         /// Determines if it si ok to reset with th einput provided by the user.
         /// </summary>
@@ -588,7 +605,6 @@ namespace minesweeper
             bool isValid = false;
             errorMessage = string.Empty;
             int minTileCount = 2;
-            int maxTileCount = 999;
 
             if (h * w < minTileCount)
             {
@@ -628,10 +644,16 @@ namespace minesweeper
             sb.AppendLine("A right click toggles a flag to help remember where bombs may be.");
             sb.AppendLine("Lastly press reset to restart the game with the same bounds or different.");
             sb.AppendLine("The first text box is for the width, the second for height, and the third for the number of Bombs.");
-            sb.AppendLine("The maximum size of the board is 781 squares ~(28 x 27).");
+            sb.AppendLine($"The maximum size of the board is {maxTileCount} tiles.");
             sb.AppendLine();
             sb.AppendLine("Good Luck!");
             MessageBox.Show(sb.ToString());
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            timeEllapsed += .1;// Math.Round(timeEllapsed + .1, 1);
+            l_TimeEllapsed.Text = string.Format("{0:0.0}", timeEllapsed);
         }
     }
 }
