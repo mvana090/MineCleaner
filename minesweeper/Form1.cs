@@ -24,11 +24,17 @@ namespace minesweeper
         private readonly Color unrevealedBackColor = Color.Gray;
         private readonly Color revealedBackColor = Color.LightGray;
         private readonly Color questionMarkColor = Color.Purple;
+        private readonly Color flagModeBombRevealedColor = Color.Orange;
         private readonly Font tileFont = new Font("Ariel Black", 8, FontStyle.Bold);
         private readonly string difficulyCustom = "Custom";
         private readonly string difficulyEasy = "Easy";
         private readonly string difficulyMedium = "Medium";
         private readonly string difficulyHard = "Hard";
+        private readonly string modeRegular = "Regular";
+        private readonly string modeBigBomb = "Big Bomb";
+        private readonly string modeFlag = "Flag";
+        private readonly string modeBigBombFlag = "Big Bomb & Flag";
+        private string currentMode = "Regular";
         private bool finishedLoading = false;
         private const string defaultWindowText = "Mine Cleaner";
         private enum TileValue
@@ -219,7 +225,7 @@ namespace minesweeper
         }
         private bool IsTileRevealed(in int index)
         {
-            return (_lboard[index].BackColor != unrevealedBackColor && !IsTileHighLighted(index) && !IsTileQuestioned(index));
+            return _lboard[index].BackColor == revealedBackColor;// || _lboard[index].BackColor == flagModeBombRevealedColor //(_lboard[index].BackColor != unrevealedBackColor && !IsTileHighLighted(index) && !IsTileQuestioned(index));
         }
         private bool IsTileHighLighted(in int index)
         {
@@ -232,9 +238,9 @@ namespace minesweeper
         private void ResizeWindow()
         {
             int minWResise = 20;
-            int minHResize = 2;
+            int minHResize = 1;
 
-            this.MaximumSize = new Size((_width > minWResise) ? _width * 16 + 35 : minWResise * 16 + 35, _height > minHResize ? _height * 16 + 98 : minHResize * 16 + 98);
+            this.MaximumSize = new Size((_width > minWResise) ? _width * 16 + 35 : minWResise * 16 + 35, _height > minHResize ? _height * 16 + 128 : minHResize * 16 + 128);
 
             this.MinimumSize = this.MaximumSize;
         }
@@ -251,20 +257,32 @@ namespace minesweeper
                 cb_difficulty.Items.Add(difficulyMedium);
                 cb_difficulty.Items.Add(difficulyHard);
                 cb_difficulty.SelectedItem = difficulyCustom;
+                cb_mode.Items.Add(modeRegular);
+                cb_mode.Items.Add(modeBigBomb);
+                cb_mode.Items.Add(modeFlag);
+                cb_mode.Items.Add(modeBigBombFlag);
+                cb_mode.SelectedItem = modeRegular;
                 UpdateWindowText();
                 finishedLoading = true;
             }
         }
         private void UpdateWindowText()
         {
-            this.Text = defaultWindowText + string.Format(" {0}: {1} {2}: {3} {4}: {5}", "H", _height.ToString(),"W", _width.ToString(),"M", _mines.ToString());
+            this.Text = defaultWindowText + string.Format(" {0}: {1} {2}: {3} {4}: {5}", "H", _height.ToString(), "W", _width.ToString(), "M", _mines.ToString());
         }
         private void UpdateTileColors(int index)
         {
             if (GetTileValue(index) == TileValue.Bomb)
             {
+                if (!IsTileHighLighted(index) || (currentMode != modeFlag && currentMode != modeBigBombFlag))
+                {
+                    SetTileBackcolor(index, Color.Red);
+                }
+                else
+                {
+                    SetTileBackcolor(index, flagModeBombRevealedColor);
+                }
                 SetTileForecolor(index, Color.Black);
-                SetTileBackcolor(index, Color.Red);
             }
             else
             {
@@ -319,7 +337,7 @@ namespace minesweeper
         /// <summary>
         /// This section randomly sets up the game. Puts bombs in appropriate locations
         /// </summary>
-        public void Assign()
+        private void Assign()
         {
             for (int i = 0; i < _lboard.Length; i++)//set all values to empty
             {
@@ -328,18 +346,44 @@ namespace minesweeper
                     SetTileValue(i, TileValue.Empty);
                 }
             }
-            for (int bombsPlaced = 0; bombsPlaced < _mines; bombsPlaced++)//place mines
+            if (currentMode == modeBigBomb || currentMode == modeBigBombFlag)//place mines
             {
-                int rand = _myHat.Next(0, _lboard.Length);
-                while (GetTileValue(rand) == TileValue.Bomb)
+                for (int bombsPlaced = 0; bombsPlaced < _mines; bombsPlaced++)
                 {
-                    rand++;
-                    if (rand == _lboard.Length)
+                    int rand = _myHat.Next(0, _lboard.Length);
+                    //Pick the top left corner of bomb
+                    //no overlap with other bombs
+                    while (rand >= _lboard.Length - _width || (rand + 1) % _width == 0
+                        || GetTileValue(rand) == TileValue.Bomb || GetTileValue(rand + 1) == TileValue.Bomb
+                        || GetTileValue(rand + _width) == TileValue.Bomb || GetTileValue(rand + _width + 1) == TileValue.Bomb)
                     {
-                        rand = 0;
+                        rand++;
+                        if (rand == _lboard.Length)
+                        {
+                            rand = 0;
+                        }
                     }
+                    SetTileValue(rand, TileValue.Bomb);
+                    SetTileValue(rand + 1, TileValue.Bomb);
+                    SetTileValue(rand + _width, TileValue.Bomb);
+                    SetTileValue(rand + 1 + _width, TileValue.Bomb);
                 }
-                SetTileValue(rand, TileValue.Bomb);
+            }
+            else //regular
+            {
+                for (int bombsPlaced = 0; bombsPlaced < _mines; bombsPlaced++)
+                {
+                    int rand = _myHat.Next(0, _lboard.Length);
+                    while (GetTileValue(rand) == TileValue.Bomb)
+                    {
+                        rand++;
+                        if (rand == _lboard.Length)
+                        {
+                            rand = 0;
+                        }
+                    }
+                    SetTileValue(rand, TileValue.Bomb);
+                }
             }
             //could look for mines and increment the ones around them?
             //there is probably a mine to empty space ratio that affects performance.
@@ -397,10 +441,11 @@ namespace minesweeper
                 }
             }
         }
+
         /// <summary>
         /// This section makes the grid for the game
         /// </summary>
-        public void Build()
+        private void Build()
         {
             int oldBoardLength = _lboard.Length;
             if (oldBoardLength != _width * _height)
@@ -443,7 +488,7 @@ namespace minesweeper
                         _lboard[i].Height = 15;
                         _lboard[i].Width = 15;
                         _lboard[i].Left = 10;
-                        _lboard[i].Top = 50;
+                        _lboard[i].Top = 80;
                     }
                     if (i != 0)
                     {
@@ -508,10 +553,10 @@ namespace minesweeper
             lock (BoardLock)
             {
                 this.ActiveControl = null;
+                int index = Convert.ToInt16(((Label)sender).Tag);
+                MouseEventArgs me = (MouseEventArgs)e;
                 if (!_gameFinished)
                 {
-                    int index = Convert.ToInt16(((Label)sender).Tag);
-                    MouseEventArgs me = (MouseEventArgs)e;
                     if (me.Button == MouseButtons.Right && !IsTileRevealed(index))
                     {
                         SetTileForecolor(index, (IsTileHighLighted(index)) ? questionMarkColor : (IsTileQuestioned(index)) ? unrevealedBackColor : highLightColor);
@@ -519,98 +564,143 @@ namespace minesweeper
                     }
                     else if (me.Button == MouseButtons.Left)
                     {
-                        BombCheck(index);
-                        if (!_gameFinished)
+                        if ((currentMode != modeFlag && currentMode != modeBigBombFlag) || !IsTileHighLighted(index))
                         {
-                            if (GetTileValue(index) == TileValue.Empty)
+                            RevealTile(index);
+                        }
+                        else if (IsTileHighLighted(index) && !_gameFinished)//flagmode
+                        {
+                            BombCheck(index);
+                            _gameFinished = !_gameFinished;
+                            timer1.Enabled = !_gameFinished;
+                            if (_gameFinished)
                             {
-                                bool continueRevealing;
-                                //could add minTileRevealed variable to make the performance better possibly.
-                                do
-                                {
-                                    continueRevealing = false;
-                                    for (int i = 0; i < _lboard.Length; i++)
-                                    {
-                                        if (IsTileRevealed(i) && GetTileValue(i) == TileValue.Empty)
-                                        {
-                                            bool isLeftCheckValid = i % _width != 0;
-                                            bool isRightCheckValid = (i + 1) % _width != 0;
-                                            if (i >= _width)//up 3
-                                            {
-                                                if (isLeftCheckValid && !IsTileRevealed(i - 1 - _width))
-                                                {
-                                                    continueRevealing = true;
-                                                    BombCheck(i - _width - 1);
-                                                }
-                                                if (!IsTileRevealed(i - _width))
-                                                {
-                                                    continueRevealing = true;
-                                                    BombCheck(i - _width);
-                                                }
-                                                if (isRightCheckValid && !IsTileRevealed(i + 1 - _width))
-                                                {
-                                                    continueRevealing = true;
-                                                    BombCheck(i + 1 - _width);
-                                                }
-                                            }
-                                            if (isRightCheckValid && !IsTileRevealed(i + 1))//right
-                                            {
-                                                continueRevealing = true;
-                                                BombCheck(i + 1);
-                                            }
-                                            if (i < _width * (_height - 1))//down 3
-                                            {
-                                                if (isLeftCheckValid && !IsTileRevealed(i - 1 + _width))
-                                                {
-                                                    continueRevealing = true;
-                                                    BombCheck(i - 1 + _width);
-                                                }
-                                                if (!IsTileRevealed(i + _width))
-                                                {
-                                                    continueRevealing = true;
-                                                    BombCheck(i + _width);
-                                                }
-                                                if (isRightCheckValid && !IsTileRevealed(i + 1 + _width))
-                                                {
-                                                    continueRevealing = true;
-                                                    BombCheck(i + 1 + _width);
-                                                }
-                                            }
-                                            if (isLeftCheckValid && !IsTileRevealed(i - 1))//left
-                                            {
-                                                continueRevealing = true;
-                                                BombCheck(i - 1);
-                                            }
-                                        }
-                                    }
-                                } while (continueRevealing);
+                                SetTileBackcolor(index, Color.Red);
+                                SetTileForecolor(index, Color.Black);
                             }
-                            int tilesRevealed = 0;
-                            for (int i = 0; i < _lboard.Length; i++)
+                            else //reveal next tile
                             {
-                                if (IsTileRevealed(i))
+                                int rand = _myHat.Next(0, _lboard.Length);
+                                while (IsTileRevealed(rand) || GetTileValue(rand) == TileValue.Bomb)
                                 {
-                                    tilesRevealed++;
-                                }
-                            }
-                            if (tilesRevealed == _lboard.Length - _mines)//won
-                            {
-                                for (int i = 0; i < _lboard.Length; i++)
-                                {
-                                    if (IsTileRevealed(i))
+                                    rand++;
+                                    if (rand == _lboard.Length)
                                     {
-                                        SetTileValue(i, TileValue.Win);
-                                        SetTileForecolor(i, Color.Blue);
-                                    }
-                                    else
-                                    {
-                                        SetTileForecolor(i, Color.Black);
-                                        SetTileBackcolor(i, revealedBackColor);
+                                        rand = 0;
                                     }
                                 }
-                                _gameFinished = true;
-                                timer1.Enabled = false;
+                                RevealTile(rand);
                             }
+                        }
+                    }
+                }
+
+                if (me.Button == MouseButtons.Middle)//mouse wheel?
+                {
+                    ResetLevel();
+                }
+            }
+        }
+
+        private void RevealTile(in int index)
+        {
+            BombCheck(index);
+            if (!_gameFinished)
+            {
+                if (GetTileValue(index) == TileValue.Empty)
+                {
+                    bool continueRevealing;
+                    //could add minTileRevealed variable to make the performance better possibly.
+                    do
+                    {
+                        continueRevealing = false;
+                        for (int i = 0; i < _lboard.Length; i++)
+                        {
+                            if (IsTileRevealed(i) && GetTileValue(i) == TileValue.Empty)
+                            {
+                                bool isLeftCheckValid = i % _width != 0;
+                                bool isRightCheckValid = (i + 1) % _width != 0;
+                                if (i >= _width)//up 3
+                                {
+                                    if (isLeftCheckValid && !IsTileRevealed(i - 1 - _width))
+                                    {
+                                        continueRevealing = true;
+                                        BombCheck(i - _width - 1);
+                                    }
+                                    if (!IsTileRevealed(i - _width))
+                                    {
+                                        continueRevealing = true;
+                                        BombCheck(i - _width);
+                                    }
+                                    if (isRightCheckValid && !IsTileRevealed(i + 1 - _width))
+                                    {
+                                        continueRevealing = true;
+                                        BombCheck(i + 1 - _width);
+                                    }
+                                }
+                                if (isRightCheckValid && !IsTileRevealed(i + 1))//right
+                                {
+                                    continueRevealing = true;
+                                    BombCheck(i + 1);
+                                }
+                                if (i < _width * (_height - 1))//down 3
+                                {
+                                    if (isLeftCheckValid && !IsTileRevealed(i - 1 + _width))
+                                    {
+                                        continueRevealing = true;
+                                        BombCheck(i - 1 + _width);
+                                    }
+                                    if (!IsTileRevealed(i + _width))
+                                    {
+                                        continueRevealing = true;
+                                        BombCheck(i + _width);
+                                    }
+                                    if (isRightCheckValid && !IsTileRevealed(i + 1 + _width))
+                                    {
+                                        continueRevealing = true;
+                                        BombCheck(i + 1 + _width);
+                                    }
+                                }
+                                if (isLeftCheckValid && !IsTileRevealed(i - 1))//left
+                                {
+                                    continueRevealing = true;
+                                    BombCheck(i - 1);
+                                }
+                            }
+                        }
+                    } while (continueRevealing);
+                }
+                int tilesRevealed = 0;
+                for (int i = 0; i < _lboard.Length; i++)
+                {
+                    if (IsTileRevealed(i))
+                    {
+                        tilesRevealed++;
+                    }
+                }
+                if ((currentMode == modeBigBomb || currentMode == modeBigBombFlag) && tilesRevealed == _lboard.Length - (_mines * 4))//won
+                {
+                    _gameFinished = true;
+                }
+                else if (tilesRevealed == _lboard.Length - _mines)//regular win condition
+                {
+                    _gameFinished = true;
+                }
+
+                if (_gameFinished == true)
+                {
+                    timer1.Enabled = false;
+                    for (int i = 0; i < _lboard.Length; i++)
+                    {
+                        if (IsTileRevealed(i))
+                        {
+                            SetTileValue(i, TileValue.Win);
+                            SetTileForecolor(i, Color.Blue);
+                        }
+                        else
+                        {
+                            SetTileForecolor(i, Color.Black);
+                            SetTileBackcolor(i, revealedBackColor);
                         }
                     }
                 }
@@ -623,6 +713,11 @@ namespace minesweeper
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void lreset_Click(object sender, EventArgs e)
+        {
+            ResetLevel();
+        }
+
+        private void ResetLevel()
         {
             lock (BoardLock)
             {
@@ -669,7 +764,7 @@ namespace minesweeper
             {
                 errorMessage = $"There must be at least {minTileCount} tiles in the grid.";
             }
-            else if ((h * w) - m < 1)
+            else if (currentMode == modeRegular && (h * w) - m < 1)
             {
                 errorMessage = $"Too many Mines (max of {Convert.ToString((w * h) - 1)}).";
             }
@@ -680,6 +775,39 @@ namespace minesweeper
             else if (m < 1)
             {
                 errorMessage = "There must be at least one mine.";
+            }
+            else if (currentMode == modeBigBombFlag || currentMode == modeFlag || currentMode == modeBigBomb)//extra specific validations
+            {
+                if (currentMode == modeBigBomb || currentMode == modeBigBombFlag)
+                {
+                    if (m > Math.Round((double)(h * w) / 3))
+                    {
+                        errorMessage = $"Too many Mines (max of {Convert.ToString(Math.Round((double)(h * w) / 3))}).";//This validation is not accurate. Find what is the most space that # given tiles can cover up.
+                    }
+                    else if ((w < 2 && h < 3) || (h < 2 && w < 3))
+                    {
+                        errorMessage = "Width and height must be larger than a 2 by 3  (or 3 by 2) grid.";
+                    }
+                }
+                
+                if (currentMode == modeFlag)
+                {
+                    if (m < Math.Round((double)(h * w) / 4))
+                    {
+                        errorMessage = $"Not Enough Mines (min of {Convert.ToString(Math.Round((double)(h * w) / 4))}).";
+                    }
+                }
+                if (currentMode == modeBigBombFlag)
+                {
+                    if (m < Math.Round((double)(h * w) / 8))
+                    {
+                        errorMessage = $"Not Enough Mines (min of {Convert.ToString(Math.Round((double)(h * w) / 8))}).";//This validation is not accurate. Find what is the most space that # given tiles can cover up.
+                    }
+                }
+                if (errorMessage == string.Empty)
+                {
+                    isValid = true;
+                }
             }
             else
             {
@@ -704,6 +832,7 @@ namespace minesweeper
             sb.AppendLine("Lastly press reset to restart the game with the same bounds or different.");
             sb.AppendLine("The first text box is for the width, the second for height, and the third for the number of Bombs.");
             sb.AppendLine($"The maximum size of the board is {maxTileCount} tiles.");
+            sb.AppendLine("A mouse wheel click (on the board) will reset the board.");
             sb.AppendLine();
             sb.AppendLine("Good Luck!");
             MessageBox.Show(sb.ToString());
@@ -716,6 +845,16 @@ namespace minesweeper
         }
 
         private void cb_difficulty_TextChanged(object sender, EventArgs e)
+        {
+            UpdateUIInputs();
+        }
+
+        private void cb_mode_TextChanged(object sender, EventArgs e)
+        {
+            UpdateUIInputs();
+        }
+
+        private void UpdateUIInputs()
         {
             if (finishedLoading)
             {
@@ -730,6 +869,10 @@ namespace minesweeper
                     tbheight.ReadOnly = true;
                     tbwidth.ReadOnly = true;
                     tbmines.ReadOnly = true;
+                }
+                if (cb_mode.SelectedItem.ToString() == modeRegular)
+                {
+                    currentMode = modeRegular;
                     if (cb_difficulty.SelectedItem.ToString() == difficulyEasy)
                     {
                         tbheight.Text = Convert.ToString(10);
@@ -742,7 +885,73 @@ namespace minesweeper
                         tbwidth.Text = Convert.ToString(15);
                         tbmines.Text = Convert.ToString(40);
                     }
-                    else
+                    else if (cb_difficulty.SelectedItem.ToString() == difficulyHard)
+                    {
+                        tbheight.Text = Convert.ToString(20);
+                        tbwidth.Text = Convert.ToString(20);
+                        tbmines.Text = Convert.ToString(80);
+                    }
+                }
+                else if (cb_mode.SelectedItem.ToString() == modeBigBomb)//10% reduction in bombs?
+                {
+                    currentMode = modeBigBomb;
+                    if (cb_difficulty.SelectedItem.ToString() == difficulyEasy)
+                    {
+                        tbheight.Text = Convert.ToString(10);
+                        tbmines.Text = Convert.ToString(10);
+                        tbwidth.Text = Convert.ToString(8);
+                    }
+                    else if (cb_difficulty.SelectedItem.ToString() == difficulyMedium)
+                    {
+                        tbheight.Text = Convert.ToString(15);
+                        tbwidth.Text = Convert.ToString(15);
+                        tbmines.Text = Convert.ToString(32);
+                    }
+                    else if (cb_difficulty.SelectedItem.ToString() == difficulyHard)
+                    {
+                        tbheight.Text = Convert.ToString(20);
+                        tbwidth.Text = Convert.ToString(20);
+                        tbmines.Text = Convert.ToString(64);
+                    }
+                }
+                else if (cb_mode.SelectedItem.ToString() == modeFlag)//bombs have to be at least 25%
+                {
+                    currentMode = modeFlag;
+                    if (cb_difficulty.SelectedItem.ToString() == difficulyEasy)
+                    {
+                        tbheight.Text = Convert.ToString(10);
+                        tbmines.Text = Convert.ToString(10);
+                        tbwidth.Text = Convert.ToString(25);
+                    }
+                    else if (cb_difficulty.SelectedItem.ToString() == difficulyMedium)
+                    {
+                        tbheight.Text = Convert.ToString(15);
+                        tbwidth.Text = Convert.ToString(15);
+                        tbmines.Text = Convert.ToString(57);
+                    }
+                    else if (cb_difficulty.SelectedItem.ToString() == difficulyHard)
+                    {
+                        tbheight.Text = Convert.ToString(20);
+                        tbwidth.Text = Convert.ToString(20);
+                        tbmines.Text = Convert.ToString(100);
+                    }
+                }
+                else if (cb_mode.SelectedItem.ToString() == modeBigBombFlag) //at least 25%
+                {
+                    currentMode = modeBigBombFlag;
+                    if (cb_difficulty.SelectedItem.ToString() == difficulyEasy)
+                    {
+                        tbheight.Text = Convert.ToString(10);
+                        tbmines.Text = Convert.ToString(10);
+                        tbwidth.Text = Convert.ToString(25);
+                    }
+                    else if (cb_difficulty.SelectedItem.ToString() == difficulyMedium)
+                    {
+                        tbheight.Text = Convert.ToString(15);
+                        tbwidth.Text = Convert.ToString(15);
+                        tbmines.Text = Convert.ToString(57);
+                    }
+                    else if (cb_difficulty.SelectedItem.ToString() == difficulyHard)
                     {
                         tbheight.Text = Convert.ToString(20);
                         tbwidth.Text = Convert.ToString(20);
