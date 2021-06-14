@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace minesweeper
+namespace MineCleaner
 {
     public partial class Form1 : Form
     {
@@ -15,7 +15,7 @@ namespace minesweeper
         private Label[] _lboard = new Label[0];
         private int _width = 10;
         private int _height = 10;
-        private int _mines = 10;// This is where I state what variables equal - Example. x = 2;
+        private int _mines = 10;
         private readonly Random _myHat = new Random();
         private bool _gameFinished = false;
         private readonly object BoardLock = new object();
@@ -268,7 +268,7 @@ namespace minesweeper
         }
         private void UpdateWindowText()
         {
-            this.Text = defaultWindowText + string.Format(" {0}: {1} {2}: {3} {4}: {5}", "H", _height.ToString(), "W", _width.ToString(), "M", _mines.ToString());
+            this.Text = defaultWindowText + string.Format(" {0}: {1} {2}: {3} {4}: {5}, {6} - {7}", "H", _height.ToString(), "W", _width.ToString(), "M", _mines.ToString(), currentMode, cb_difficulty.Text);
         }
         private void UpdateTileColors(int index)
         {
@@ -780,9 +780,10 @@ namespace minesweeper
             {
                 if (currentMode == modeBigBomb || currentMode == modeBigBombFlag)
                 {
-                    if (m > Math.Round((double)(h * w) / 3))
+                    int maxGarunteedMines = Convert.ToInt32(Math.Floor((double)(w + 1) / 3) * Math.Floor((double)(h + 1) / 3));//(Board Width + TileWidth - 1) / ((2*TileWidth) - 1)
+                    if (m > maxGarunteedMines)
                     {
-                        errorMessage = $"Too many Mines (max of {Convert.ToString(Math.Round((double)(h * w) / 3))}).";//This validation is not accurate. Find what is the most space that # given tiles can cover up.
+                        errorMessage = $"Too many Mines (max of {Convert.ToString(maxGarunteedMines)}).";//This validation is not accurate. Find what is the most space that # given tiles can cover up.
                     }
                     else if ((w < 2 && h < 3) || (h < 2 && w < 3))
                     {
@@ -795,13 +796,6 @@ namespace minesweeper
                     if (m < Math.Round((double)(h * w) / 4))
                     {
                         errorMessage = $"Not Enough Mines (min of {Convert.ToString(Math.Round((double)(h * w) / 4))}).";
-                    }
-                }
-                if (currentMode == modeBigBombFlag)
-                {
-                    if (m < Math.Round((double)(h * w) / 8))
-                    {
-                        errorMessage = $"Not Enough Mines (min of {Convert.ToString(Math.Round((double)(h * w) / 8))}).";//This validation is not accurate. Find what is the most space that # given tiles can cover up.
                     }
                 }
                 if (errorMessage == string.Empty)
@@ -876,8 +870,8 @@ namespace minesweeper
                     if (cb_difficulty.SelectedItem.ToString() == difficulyEasy)
                     {
                         tbheight.Text = Convert.ToString(10);
-                        tbmines.Text = Convert.ToString(10);
                         tbwidth.Text = Convert.ToString(10);
+                        tbmines.Text = Convert.ToString(10);
                     }
                     else if (cb_difficulty.SelectedItem.ToString() == difficulyMedium)
                     {
@@ -898,20 +892,20 @@ namespace minesweeper
                     if (cb_difficulty.SelectedItem.ToString() == difficulyEasy)
                     {
                         tbheight.Text = Convert.ToString(10);
-                        tbmines.Text = Convert.ToString(10);
-                        tbwidth.Text = Convert.ToString(8);
+                        tbwidth.Text = Convert.ToString(10);
+                        tbmines.Text = Convert.ToString(8);
                     }
                     else if (cb_difficulty.SelectedItem.ToString() == difficulyMedium)
                     {
                         tbheight.Text = Convert.ToString(15);
                         tbwidth.Text = Convert.ToString(15);
-                        tbmines.Text = Convert.ToString(32);
+                        tbmines.Text = Convert.ToString(25);
                     }
                     else if (cb_difficulty.SelectedItem.ToString() == difficulyHard)
                     {
                         tbheight.Text = Convert.ToString(20);
                         tbwidth.Text = Convert.ToString(20);
-                        tbmines.Text = Convert.ToString(64);
+                        tbmines.Text = Convert.ToString(49);
                     }
                 }
                 else if (cb_mode.SelectedItem.ToString() == modeFlag)//bombs have to be at least 25%
@@ -920,8 +914,8 @@ namespace minesweeper
                     if (cb_difficulty.SelectedItem.ToString() == difficulyEasy)
                     {
                         tbheight.Text = Convert.ToString(10);
-                        tbmines.Text = Convert.ToString(10);
-                        tbwidth.Text = Convert.ToString(25);
+                        tbwidth.Text = Convert.ToString(10);
+                        tbmines.Text = Convert.ToString(25);
                     }
                     else if (cb_difficulty.SelectedItem.ToString() == difficulyMedium)
                     {
@@ -936,26 +930,26 @@ namespace minesweeper
                         tbmines.Text = Convert.ToString(100);
                     }
                 }
-                else if (cb_mode.SelectedItem.ToString() == modeBigBombFlag) //at least 25%
+                else if (cb_mode.SelectedItem.ToString() == modeBigBombFlag) //at least 12.5%
                 {
                     currentMode = modeBigBombFlag;
                     if (cb_difficulty.SelectedItem.ToString() == difficulyEasy)
                     {
                         tbheight.Text = Convert.ToString(10);
-                        tbmines.Text = Convert.ToString(10);
-                        tbwidth.Text = Convert.ToString(25);
+                        tbwidth.Text = Convert.ToString(10);
+                        tbmines.Text = Convert.ToString(8);
                     }
                     else if (cb_difficulty.SelectedItem.ToString() == difficulyMedium)
                     {
                         tbheight.Text = Convert.ToString(15);
                         tbwidth.Text = Convert.ToString(15);
-                        tbmines.Text = Convert.ToString(57);
+                        tbmines.Text = Convert.ToString(25);
                     }
                     else if (cb_difficulty.SelectedItem.ToString() == difficulyHard)
                     {
                         tbheight.Text = Convert.ToString(20);
                         tbwidth.Text = Convert.ToString(20);
-                        tbmines.Text = Convert.ToString(100);
+                        tbmines.Text = Convert.ToString(49);
                     }
                 }
             }

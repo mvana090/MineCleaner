@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.13
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31313.79
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "minesweeper", "minesweeper\minesweeper.csproj", "{A4212EB3-929F-45A7-9771-76D13C1BB423}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MineCleaner", "minesweeper\MineCleaner.csproj", "{A4212EB3-929F-45A7-9771-76D13C1BB423}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0247E4C9-225B-4B86-8C98-98AF9E9DDCDF}
 	EndGlobalSection
 EndGlobal

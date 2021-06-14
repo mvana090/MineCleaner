@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{A4212EB3-929F-45A7-9771-76D13C1BB423}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>minesweeper</RootNamespace>
-    <AssemblyName>minesweeper</AssemblyName>
+    <RootNamespace>mineCleaner</RootNamespace>
+    <AssemblyName>Mine Cleaner</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -64,6 +64,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

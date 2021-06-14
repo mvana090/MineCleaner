@@ -1,4 +1,4 @@
-﻿namespace minesweeper
+﻿namespace MineCleaner
 {
     partial class Form1
     {
