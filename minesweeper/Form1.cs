@@ -790,7 +790,7 @@ namespace MineCleaner
                         errorMessage = "Width and height must be larger than a 2 by 3  (or 3 by 2) grid.";
                     }
                 }
-                
+
                 if (currentMode == modeFlag)
                 {
                     if (m < Math.Round((double)(h * w) / 4))
@@ -827,6 +827,12 @@ namespace MineCleaner
             sb.AppendLine("The first text box is for the width, the second for height, and the third for the number of Bombs.");
             sb.AppendLine($"The maximum size of the board is {maxTileCount} tiles.");
             sb.AppendLine("A mouse wheel click (on the board) will reset the board.");
+            sb.AppendLine();
+            sb.AppendLine("Other Game Modes:");
+            sb.AppendLine("Any Big Bomb Mode will have mines in clumps of 4 in 2 by 2 non-overlapping squares.");
+            sb.AppendLine("Any Flag Mode will allow left-clicking a highlighted tile to 'confirm' it is a bomb.");
+            sb.AppendLine(" - If the player is correct, a random non-bomb tile is reviealed.");
+            sb.AppendLine(" - If the player is incorrect, the player loses the game.");
             sb.AppendLine();
             sb.AppendLine("Good Luck!");
             MessageBox.Show(sb.ToString());
